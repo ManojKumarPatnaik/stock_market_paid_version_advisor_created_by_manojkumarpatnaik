@@ -1,0 +1,10 @@
+{
+  "model": "gpt-35-turbo",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "%s"
+    }
+  ],
+  "max_tokens": 2000
+}
