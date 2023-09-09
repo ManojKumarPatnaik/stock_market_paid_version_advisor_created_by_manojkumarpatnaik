@@ -65,7 +65,7 @@ function App() {
       ]
     }
 
-    axios.post("http://localhost:5001/jarvis/openai",
+    axios.post("http://localhost:5000/jarvis/openai",
       apiRequestBody
     ).then((data) => {
       return data.data;
