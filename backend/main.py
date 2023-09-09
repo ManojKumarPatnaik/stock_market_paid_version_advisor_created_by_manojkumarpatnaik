@@ -26,8 +26,8 @@ def getResponseFromOpenAI(input_prompt):
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
-    raw_input_data =  "Can you extract the symbol, start_date, and end_date and store the values in a dictionary? " \
-                     "Symbol should be in uppercase and start_date, end_date should be in yyyy-mm-DD format. " \
+    raw_input_data =  "Can you extract the symbol, start_date, number_of_days, and end_date and store the values in a dictionary? " \
+                     "Symbol should be in uppercase and start_date, end_date should be in yyyy-mm-DD format and number_of_days will present before the days keyword " \
                      "Please see below text for reference.\n" + input_prompt
     json_input["messages"][0]["content"] = raw_input_data
 
@@ -42,7 +42,8 @@ def getResponseFromOpenAI(input_prompt):
         start_date = content_Json['start_date']
         # print(start_date)
         end_date = content_Json['end_date']
-        get_Data_From_YFinance(symbol,start_date,end_date)
+        no_of_days = content_Json['number_of_days']
+        get_Data_From_YFinance(symbol, start_date, end_date,no_of_days)
         print('Response text:\n', message["content"])
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
@@ -112,15 +113,23 @@ def compare():
     return jsonify({"status": "success"})
 
 
-def get_Data_From_YFinance(symbol, start_date, end_date):
+def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     # Retrieve the historical data for the specified symbol and date range
     data = yf.download(symbol, start=start_date, end=end_date)
+    # Calculate the average volume and average LTP
+    data['avg_volume'] = data['Volume'].rolling(window=no_of_days).mean()
+    data['avg_LTP'] = (data['Open'] + data['High'] + data['Low'] + data['Close']) / 4
+
+    # Select the columns of interest
+    columns_of_interest = ['Open', 'Close',  'Volume', 'avg_volume', 'avg_LTP']
+    data = data[columns_of_interest]
 
     # Print the data
-    print("printing yfinance data from nse\n")
+    print("Printing yfinance data from NSE\n")
     print(data)
-    draw_graph(symbol,data)
-    # getResponseFromOpenAI26(data)
+    monthly_data = data.resample('M').mean()
+    print(monthly_data)
+    draw_graph2(symbol,data,no_of_days)
     return data
 
 
@@ -169,12 +178,12 @@ def draw_graph1(symbol,data):
     plt.show()
 
 #  drawing a graph with volume and date with plotting of SMA for 500 days on price and 100 days on volume
-def draw_graph2(symbol,data):
+def draw_graph2(symbol,data,no_of_days):
 
 
     # Compute the moving averages with a 500-day window
-    price_window_size = 500
-    volume_window_size = 100
+    price_window_size = no_of_days
+    volume_window_size = no_of_days
     data[f"SMA_{price_window_size}"] = data['Close'].rolling(window=price_window_size).mean()
     data[f"SMA_{volume_window_size}_Vol"] = data['Volume'].rolling(window=volume_window_size).mean()
 
