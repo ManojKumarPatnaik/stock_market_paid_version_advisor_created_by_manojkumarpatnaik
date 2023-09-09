@@ -84,13 +84,16 @@ def getFromOpenAI_21_days_sma(data):
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
         print('Error response text:', ex.response.text)
-def getResponseFromOpenAI1(input_prompt):
+def getStockAdviceFromOpenAI(dataFrame):
     # reading from frontend ui and once user click on submit button
     uri = os.getenv("URI")
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
-    raw_input_data =  "Can you give the statistics analysis like mean, sma for 21 days from this table?\n" + input_prompt
+    raw_input_data =  "You're the expert stock advisor and having 30 years of experience in stock selection and Investments " \
+                      "give below dataframe can you analyze the stock performance over the period and explain how it behave in every quater? " \
+                      "and when to buy this stock? how long should I hold means suggestion for long or short" \
+                      " term investment plan?\n" + str(dataFrame)
     json_input["messages"][0]["content"] = raw_input_data
     try:
         response = requests.post(uri, headers=header, json=json_input)
@@ -130,6 +133,7 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     print(data)
     monthly_data = data.resample('M').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
     print(monthly_data)
+    getStockAdviceFromOpenAI(monthly_data)
     imgdata = draw_graph2(symbol,data,no_of_days)
     return data, imgdata
 
@@ -210,12 +214,12 @@ def draw_graph2(symbol,data,no_of_days):
 
     plt.title(f"{symbol.upper()} Price and Volume with Simple Moving Averages")
     # Save the graph as an image file	
-    image_file = 'graph.png'	
-    plt.savefig(image_file)	
+    image_file = 'graph.png'
+    plt.savefig(image_file)
     plt.close()  # Close the plot to release resources	
     # Convert the saved image to base64	
-    with open(image_file, "rb") as image_file:	
-        base64_image = base64.b64encode(image_file.read()).decode()	
+    with open(image_file, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode()
     return base64_image
 
 def draw_graph4(symbol, data,no_of_days):
