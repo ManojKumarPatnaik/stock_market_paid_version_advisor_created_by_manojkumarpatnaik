@@ -34,7 +34,7 @@ function App() {
     // Initial system message to determine JarvisStockbot functionality
     // How it responds, how it talks, etc.
     setIsTyping(true);
-    await processMessageToJarvisStockbot([newMessage]);
+    await processMessageToJarvisStockbot(newMessages);
   };
 
   async function processMessageToJarvisStockbot(chatMessages) { // messages is an array of messages
@@ -52,15 +52,16 @@ function App() {
       return { role: role, content: messageObject.message }
     });
 
+    const message= apiMessages[apiMessages.length - 1]
+
 
     // Get the request body set up with the model we plan to use
     // and the messages which we formatted above. We add a system message in the front to'
     // determine how we want JarvisStockbot to act. 
     const apiRequestBody = {
       "model": "gpt-3.5-turbo",
-      "messages": [
-        systemMessage,  // The system message DEFINES the logic of our JarvisStockbot
-        ...apiMessages // The messages from our chat with JarvisStockbot
+      "messages": [  
+        message // The messages from our chat with JarvisStockbot
       ]
     }
 
@@ -106,7 +107,7 @@ function App() {
                 return <>{message.sender === "JarvisStockbot" ?
                   <div className='message'>
                     <img src='src\assets\bot.png'></img>
-                    <Message key={i} model={message} /></div> : <div className='message-user'>
+                    <img src={`data:image/png;base64,${message.message}`}/></div> : <div className='message-user'>
                     <Message key={i} model={message} />
                     <img src='src\assets\user.png'></img>
                   </div>}</>
