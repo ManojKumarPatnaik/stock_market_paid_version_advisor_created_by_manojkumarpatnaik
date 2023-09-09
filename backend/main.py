@@ -118,18 +118,17 @@ def compare():
 def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     # Retrieve the historical data for the specified symbol and date range
     data = yf.download(symbol, start=start_date, end=end_date)
-    # Calculate the average volume and average LTP
-    data['avg_volume'] = data['Volume'].rolling(window=no_of_days).mean()
+    # Calculate the  average LTP
     data['avg_LTP'] = (data['Open'] + data['High'] + data['Low'] + data['Close']) / 4
 
     # Select the columns of interest
-    columns_of_interest = ['Open', 'Close',  'Volume', 'avg_volume', 'avg_LTP']
+    columns_of_interest = ['Open', 'Close',  'Volume', 'avg_LTP']
     data = data[columns_of_interest]
 
     # Print the data
     print("Printing yfinance data from NSE\n")
     print(data)
-    monthly_data = data.resample('M').mean()
+    monthly_data = data.resample('M').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
     print(monthly_data)
     imgdata = draw_graph2(symbol,data,no_of_days)
     return data, imgdata
@@ -137,10 +136,10 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
 
 
 #  drawing a graph with price and date with SMA for 500 days on close price
-def draw_graph(symbol,data):
+def draw_graph(symbol,data,no_of_days):
 
     # Compute the moving average with a 500-day window
-    window_size = 500
+    window_size = no_of_days
     data[f"SMA_{window_size}"] = data['Close'].rolling(window=window_size).mean()
     print(data[f"SMA_{window_size}"] )
 
@@ -155,10 +154,10 @@ def draw_graph(symbol,data):
     plt.show()
 
 #  drawing a graph with price and date with SMA for 500 days on volume
-def draw_graph1(symbol,data):
+def draw_graph1(symbol,data,no_of_days):
 
     # Compute the moving average with a 500-day window
-    window_size = 21
+    window_size = no_of_days
     data[f"SMA_{window_size}"] = data['Volume'].rolling(window=window_size).mean()
 
     # Plot the graph
@@ -179,15 +178,15 @@ def draw_graph1(symbol,data):
 
     plt.show()
 
-#  drawing a graph with volume and date with plotting of SMA for 500 days on price and 100 days on volume
+#  drawing a graph with volume and date with plotting of SMA for no_of_days on price and on volume
 def draw_graph2(symbol,data,no_of_days):
 
 
-    # Compute the moving averages with a 500-day window
-    price_window_size = no_of_days
-    volume_window_size = no_of_days
-    data[f"SMA_{price_window_size}"] = data['Close'].rolling(window=price_window_size).mean()
-    data[f"SMA_{volume_window_size}_Vol"] = data['Volume'].rolling(window=volume_window_size).mean()
+    # Compute the moving averages with a no_of_days window
+    price_window_size = int(no_of_days)
+    volume_window_size = int(no_of_days)
+    data[f"SMA_{price_window_size}"] = data['Close'].rolling(window=price_window_size,min_periods=price_window_size).mean()
+    data[f"SMA_{volume_window_size}_Vol"] = data['Volume'].rolling(window=volume_window_size,min_periods=volume_window_size).mean()
 
     # Plot the graph
     fig, ax1 = plt.subplots()
@@ -219,9 +218,9 @@ def draw_graph2(symbol,data,no_of_days):
         base64_image = base64.b64encode(image_file.read()).decode()	
     return base64_image
 
-def draw_graph4(symbol, data):
+def draw_graph4(symbol, data,no_of_days):
     # Compute the moving average with a 500-day window
-    window_size = 500
+    window_size = no_of_days
     data[f"SMA_{window_size}"] = data['Close'].rolling(window=window_size).mean()
 
     # Calculate VWAP
@@ -264,9 +263,9 @@ def draw_graph4(symbol, data):
     plt.suptitle(f"{symbol.upper()} Price, VWAP, LTP, and Number of Trades")
     plt.show()
 
-def draw_graph5(symbol, data):
+def draw_graph5(symbol, data,no_of_days):
     # Compute the moving average with a 500-day window
-    window_size = 500
+    window_size = no_of_days
     data[f"SMA_{window_size}"] = data['Close'].rolling(window=window_size).mean()
 
     # Plot the graph
@@ -293,7 +292,7 @@ def draw_graph5(symbol, data):
     plt.show()
 
 
-def getResponseFromOpenAI26(data):
+def getResponseFromOpenAI26(data,no_of_days):
     # reading from frontend ui and once user click on submit button
     uri = os.getenv("URI")
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
@@ -308,7 +307,7 @@ def getResponseFromOpenAI26(data):
         print(message)
 
         # Analyze the data and generate suggestions
-        sma_21 = data['Close'].rolling(window=21).mean()
+        sma_21 = data['Close'].rolling(window=no_of_days).mean()
         current_price = data['Close'][-1]
         current_sma21 = sma_21[-1]
         if current_price > current_sma21:
