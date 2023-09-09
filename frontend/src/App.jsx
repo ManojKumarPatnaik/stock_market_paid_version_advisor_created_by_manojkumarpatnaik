@@ -34,7 +34,7 @@ function App() {
     // Initial system message to determine JarvisStockbot functionality
     // How it responds, how it talks, etc.
     setIsTyping(true);
-    await processMessageToJarvisStockbot(newMessages);
+    await processMessageToJarvisStockbot([newMessage]);
   };
 
   async function processMessageToJarvisStockbot(chatMessages) { // messages is an array of messages
@@ -44,10 +44,10 @@ function App() {
 
     let apiMessages = chatMessages.map((messageObject) => {
       let role = "";
-      if (messageObject.sender === "JarvisStockbot") {
+      if (messageObject.sender === "user") {
         role = "assistant";
       } else {
-        role = "user";
+        role = "assistant2";
       }
       return { role: role, content: messageObject.message }
     });
@@ -64,28 +64,24 @@ function App() {
       ]
     }
 
-    axios.post("http://localhost:3001/api",
-      {
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: apiRequestBody
-      }).then((data) => {
-        return data.data;
-      }).then((data) => {
-        console.log(data);
-        setMessages([...chatMessages, {
-          message: data,
-          sender: "JarvisStockbot"
-        }]);
-        setIsTyping(false);
-      }).catch(error => {
-        setMessages([...chatMessages, {
-          message: "Currently cant serve your request please try later!",
-          sender: "JarvisStockbot"
-        }])
-        console.log(error);
-      });;
+    axios.post("http://localhost:5001/jarvis/openai",
+      apiRequestBody
+    ).then((data) => {
+      return data.data;
+    }).then((data) => {
+      console.log(data);
+      setMessages([...chatMessages, {
+        message: data.chart,
+        sender: "JarvisStockbot"
+      }]);
+      setIsTyping(false);
+    }).catch(error => {
+      setMessages([...chatMessages, {
+        message: "Currently cant serve your request please try later!",
+        sender: "JarvisStockbot"
+      }])
+      console.log(error);
+    });;
   }
 
   return (
@@ -110,8 +106,8 @@ function App() {
                 return <>{message.sender === "JarvisStockbot" ?
                   <div className='message'>
                     <img src='src\assets\bot.png'></img>
-                  <Message key={i} model={message} /></div>:<div className='message-user'>
-                  <Message key={i} model={message} />
+                    <Message key={i} model={message} /></div> : <div className='message-user'>
+                    <Message key={i} model={message} />
                     <img src='src\assets\user.png'></img>
                   </div>}</>
 

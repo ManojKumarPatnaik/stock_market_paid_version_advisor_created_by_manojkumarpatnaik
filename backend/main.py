@@ -9,6 +9,7 @@ import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 import base64
+from flask_cors import CORS, cross_origin
 
 # Load configuration from file
 config = configparser.ConfigParser()
@@ -53,6 +54,7 @@ def getResponseFromOpenAI(input_prompt):
 
 
 app = Flask(__name__)
+CORS(app, support_credentials=True)
 
 def getFromOpenAI_21_days_sma(data):
     # reading from frontend ui and once user click on submit button
@@ -106,6 +108,7 @@ def getStockAdviceFromOpenAI(dataFrame):
 
 
 @app.route('/jarvis/openai', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def compare():
     data = request.get_json()
     # retrieve json data from request
@@ -330,4 +333,4 @@ def getResponseFromOpenAI26(data,no_of_days):
         print('Error response text:', ex.response.text)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
