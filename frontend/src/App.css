@@ -3,29 +3,35 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  
 }
 
-div.cs-message__content{
+div.cs-message__content {
   background-color: rgb(158, 79, 231);
 }
 
-.cs-main-container{
+.cs-main-container {
   border-radius: 10px;
 }
 
 body {
- background-color: cornflowerblue;
+  background-color: cornflowerblue;
 }
 
-.message{
+.message {
   display: flex;
 }
 
-.message-user{
+.message-user {
   display: flex;
   align-items: flex-end;
 }
 
+.message {
+  background: aliceblue;
+  margin: 10px;
+}
 
-
+.bot {
+  width: 3rem;
+  height: 3rem;
+}
