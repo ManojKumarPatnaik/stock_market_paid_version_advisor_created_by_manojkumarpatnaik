@@ -4,6 +4,7 @@ import Chatbot from "react-chatbot-kit";
 import config from "./stockbot/config";
 import MessageParser from "./stockbot/message-parser";
 import ActionProvider from "./stockbot/action-provider";
+import './App.css'
 
 function App() {
   return (
