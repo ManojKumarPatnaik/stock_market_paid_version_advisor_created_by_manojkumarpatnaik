@@ -1,27 +1,27 @@
-
-
 import requests
 import json
+import configparser
 import os
-# from nsepy import get_history
-# from datetime import date
-# import pandas
+from flask import Flask, request, jsonify
+
+# Load configuration from file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# Set environment variables from configuration, with default values
+os.environ.setdefault('URI', config.get('API', 'URI', fallback='http://default-uri.com'))
+os.environ.setdefault('API_KEY', config.get('API', 'API_KEY', fallback='default-api-key'))
+os.environ.setdefault('KEY_VALUE', config.get('API', 'KEY_VALUE', fallback='default-key-value'))
 
 def example(input_prompt):
     # URI and header
 
     uri = os.getenv("URI")
-    header = {os.getenv("API_KEY"):os.getenv("KEY_VALUE")}
+    header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     # reading from frontend ui and once user click on submit button
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
     json_input["messages"][0]["content"] = input_prompt
-    # Send POST request
-
-
-    # data = get_history(symbol="SBIN", start=date(2015, 1, 1), end=date(2015, 1, 31))
-    # data[['Close']].plot()
-
 
     try:
         response = requests.post(uri, headers=header, json=json_input)
@@ -32,7 +32,8 @@ def example(input_prompt):
         print('Error response status code:', ex.response.status_code)
         print('Error response text:', ex.response.text)
 
-from flask import Flask, request, jsonify
+
+
 
 app = Flask(__name__)
 
@@ -50,6 +51,3 @@ def compare():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
-
