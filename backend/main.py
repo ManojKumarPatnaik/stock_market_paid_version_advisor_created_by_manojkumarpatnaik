@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
+import base64
 
 # Load configuration from file
 config = configparser.ConfigParser()
@@ -43,8 +44,9 @@ def getResponseFromOpenAI(input_prompt):
         # print(start_date)
         end_date = content_Json['end_date']
         no_of_days = content_Json['number_of_days']
-        get_Data_From_YFinance(symbol, start_date, end_date,no_of_days)
+        data, chartdata = get_Data_From_YFinance(symbol, start_date, end_date,no_of_days)
         print('Response text:\n', message["content"])
+        return chartdata
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
         print('Error response text:', ex.response.text)
@@ -107,10 +109,10 @@ def compare():
     # extract prompt string from data
     input_prompt = data["messages"][0]["content"]
     # call example method with input prompt
-    getResponseFromOpenAI(input_prompt)
+    imgdata = getResponseFromOpenAI(input_prompt)
     # return response
 
-    return jsonify({"status": "success"})
+    return jsonify({"status": "success", "chart": imgdata})
 
 
 def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
@@ -129,8 +131,8 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     print(data)
     monthly_data = data.resample('M').mean()
     print(monthly_data)
-    draw_graph2(symbol,data,no_of_days)
-    return data
+    imgdata = draw_graph2(symbol,data,no_of_days)
+    return data, imgdata
 
 
 
@@ -208,7 +210,14 @@ def draw_graph2(symbol,data,no_of_days):
     ax2.legend(loc='upper right')
 
     plt.title(f"{symbol.upper()} Price and Volume with Simple Moving Averages")
-    plt.show()
+    # Save the graph as an image file	
+    image_file = 'graph.png'	
+    plt.savefig(image_file)	
+    plt.close()  # Close the plot to release resources	
+    # Convert the saved image to base64	
+    with open(image_file, "rb") as image_file:	
+        base64_image = base64.b64encode(image_file.read()).decode()	
+    return base64_image
 
 def draw_graph4(symbol, data):
     # Compute the moving average with a 500-day window
