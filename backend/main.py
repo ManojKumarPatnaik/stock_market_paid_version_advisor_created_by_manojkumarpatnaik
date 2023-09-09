@@ -333,4 +333,4 @@ def getResponseFromOpenAI26(data,no_of_days):
         print('Error response text:', ex.response.text)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
