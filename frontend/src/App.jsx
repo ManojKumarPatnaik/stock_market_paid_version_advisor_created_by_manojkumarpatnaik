@@ -52,7 +52,7 @@ function App() {
       return { role: role, content: messageObject.message }
     });
 
-    const message= apiMessages[apiMessages.length - 1]
+    const message = apiMessages[apiMessages.length - 1]
 
 
     // Get the request body set up with the model we plan to use
@@ -60,20 +60,22 @@ function App() {
     // determine how we want JarvisStockbot to act. 
     const apiRequestBody = {
       "model": "gpt-3.5-turbo",
-      "messages": [  
+      "messages": [
         message // The messages from our chat with JarvisStockbot
       ]
     }
 
-    axios.post("http://localhost:5000/jarvis/openai",
+    axios.post("http://localhost:5001/jarvis/openai",
       apiRequestBody
     ).then((data) => {
       return data.data;
     }).then((data) => {
       console.log(data);
+      const chartData = data.chart ? data.chart : null;
       setMessages([...chatMessages, {
-        message: data.chart,
-        sender: "JarvisStockbot"
+        message: "data.message",
+        sender: "JarvisStockbot",
+        chart: chartData
       }]);
       setIsTyping(false);
     }).catch(error => {
@@ -106,10 +108,14 @@ function App() {
                 console.log(message)
                 return <>{message.sender === "JarvisStockbot" ?
                   <div className='message'>
-                    <img src='src\assets\bot.png'></img>
-                    <img src={`data:image/png;base64,${message.message}`}/></div> : <div className='message-user'>
+                    <img src='src\assets\bot.png' className="icon"></img>{
+                      message.chart ?
+                        <div><img src={`data:image/png;base64,${message.chart}`} />
+                          <Message key={i} model={message} /></div> :
+                        <Message key={i} model={message} />}
+                  </div> : <div className='message-user'>
                     <Message key={i} model={message} />
-                    <img src='src\assets\user.png'></img>
+                    <img src='src\assets\user.png' className="icon"></img>
                   </div>}</>
 
 
