@@ -80,6 +80,7 @@ function App() {
             sender: "JarvisStockbot",
           },
         ]);
+        setIsTyping(false);
       });
   }
 
