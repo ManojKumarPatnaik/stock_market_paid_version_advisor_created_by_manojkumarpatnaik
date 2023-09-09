@@ -35,15 +35,14 @@ def getResponseFromOpenAI(input_prompt):
         response = requests.post(uri, headers=header, json=json_input)
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
-        # print(message)
-        symbol = jsonify(str(message["content"])).response
-        print(symbol)
-        # start_date = message["content"]['start_date']
-        # end_date = message["content"]['end_date']
-        # # Call the get_Data() method with the extracted values
-        # get_Data(symbol, start_date, end_date)
-        # Call the get_Data() method with the extracted values
-        get_Data_From_YFinance("ASIANPAINT.NS", "2023-05-22", "2023-09-07")
+        content_Json=json.loads(message["content"])
+        # print(content_Json)
+        symbol = content_Json['symbol']
+        # print(symbol)
+        start_date = content_Json['start_date']
+        # print(start_date)
+        end_date = content_Json['end_date']
+        get_Data_From_YFinance(symbol,start_date,end_date)
         print('Response text:\n', message["content"])
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
@@ -52,13 +51,13 @@ def getResponseFromOpenAI(input_prompt):
 
 app = Flask(__name__)
 
-def getResponseFromOpenAI2(data):
+def getFromOpenAI_21_days_sma(data):
     # reading from frontend ui and once user click on submit button
     uri = os.getenv("URI")
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
-    raw_input_data =  "Can you suggest when to buy and hold the stock based on the chart below, and provide some short and long-term use cases?\n" + data
+    raw_input_data =  "Can you suggest when to buy and hold the stock based on the data below, and provide some short and long-term use cases?\n" + data
     json_input["messages"][0]["content"] = raw_input_data
     try:
         response = requests.post(uri, headers=header, json=json_input)
@@ -114,17 +113,15 @@ def compare():
 
 
 def get_Data_From_YFinance(symbol, start_date, end_date):
-    # symbol = "SBIN.NS"
-    # start_date = "2013-01-01"
-    # end_date = "2023-01-31"
-
     # Retrieve the historical data for the specified symbol and date range
     data = yf.download(symbol, start=start_date, end=end_date)
 
     # Print the data
     print("printing yfinance data from nse\n")
     print(data)
-    # getResponseFromOpenAI2(data)
+    draw_graph(symbol,data)
+    # getResponseFromOpenAI26(data)
+    return data
 
 
 
@@ -134,6 +131,7 @@ def draw_graph(symbol,data):
     # Compute the moving average with a 500-day window
     window_size = 500
     data[f"SMA_{window_size}"] = data['Close'].rolling(window=window_size).mean()
+    print(data[f"SMA_{window_size}"] )
 
     # Plot the graph
     plt.plot(data.index, data['Close'], label='Closing Price')
@@ -149,7 +147,7 @@ def draw_graph(symbol,data):
 def draw_graph1(symbol,data):
 
     # Compute the moving average with a 500-day window
-    window_size = 500
+    window_size = 21
     data[f"SMA_{window_size}"] = data['Volume'].rolling(window=window_size).mean()
 
     # Plot the graph
@@ -275,6 +273,40 @@ def draw_graph5(symbol, data):
 
     plt.title(f"{symbol.upper()} Price and Number of Trades with Simple Moving Average")
     plt.show()
+
+
+def getResponseFromOpenAI26(data):
+    # reading from frontend ui and once user click on submit button
+    uri = os.getenv("URI")
+    header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
+    with open('resources/input.json', 'r') as f:
+        json_input = json.load(f)
+    raw_input_data =  "Can you suggest when to buy and hold the stock based on the data below, and provide some short and long-term use cases?\n"
+    json_input["messages"][0]["content"] = raw_input_data
+    try:
+        response = requests.post(uri, headers=header, json=json_input)
+        response.raise_for_status()
+        message = response.json()["choices"][0]["message"]
+        print(message)
+
+        # Analyze the data and generate suggestions
+        sma_21 = data['Close'].rolling(window=21).mean()
+        current_price = data['Close'][-1]
+        current_sma21 = sma_21[-1]
+        if current_price > current_sma21:
+            suggestion = "The current price is above the 21-day SMA. This suggests a bullish trend, and it may be a good time to buy the stock."
+        else:
+            suggestion = "The current price is below the 21-day SMA. This suggests a bearish trend, and it may be a good idea to wait before buying the stock."
+        short_term_use_case = "One short-term use case for this stock is to trade it based on technical analysis, using indicators such as moving averages and momentum oscillators."
+        long_term_use_case = "One long-term use case for this stock is to hold it as part of a diversified portfolio and take advantage of any dividend payments and potential price appreciation over time."
+
+        # Format the suggestions and return the response
+        response_text = f"{suggestion}\n\n{short_term_use_case}\n\n{long_term_use_case}"
+        print('Response text:\n', response_text)
+        return response_text
+    except requests.exceptions.HTTPError as ex:
+        print('Error response status code:', ex.response.status_code)
+        print('Error response text:', ex.response.text)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
