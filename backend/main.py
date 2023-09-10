@@ -36,7 +36,7 @@ def getResponseFromOpenAI(input_prompt):
     Start_date: The start date of the data range, in yyyy-mm-DD format
     End_date: The end date of the data range, in yyyy-mm-DD format
     Moving_average_days: The number of days to use for the moving average calculation, should be an integer format only
-    before the word 'days'
+    before the word 'days' (e.g., moving_average_days = 21 for 21 days)
     Balance_sheet: Indicate 'true' or 'false' if above text asking to extract balance sheet data
     Actions: Indicate 'true' or 'false'  if above text asking to extract actions data
     Financials: Indicate 'true' or 'false'  if above text asking to extract financial statements data
