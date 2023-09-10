@@ -10,6 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import base64
 from flask_cors import CORS, cross_origin
+import numpy as np
 
 # Load configuration from file
 config = configparser.ConfigParser()
@@ -133,7 +134,10 @@ def getStockAdviceFromOpenAI(dataFrame):
     raw_input_data =  "You're the expert stock advisor and having 30 years of experience in stock selection and Investments plans" \
                       "give below dataframe can you analyze the stock performance over the period and explain how it behave in every quater? " \
                       "and when to buy this stock? how long should I hold means suggestion for long or short" \
-                      " term investment plan and don't give any code snippets?\n" + str(dataFrame)
+                      " term investment plan and don't give any code snippets?\n" + str(dataFrame)+'''
+                      '''
+
+
     json_input["messages"][0]["content"] = raw_input_data
     try:
         response = requests.post(uri, headers=header, json=json_input)
@@ -173,22 +177,26 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
 
 
     # Print the data
-    print("Printing yfinance data from NSE\n")
+    print("Printing yfinance data \n")
     print(data)
 
     quarter_data = data.resample('Q').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
 
-
     # Calculate the number of trades transacted per day
-    num_trades = data["Volume"] // no_of_days
+    num_trades = data["Volume"].fillna(0) // no_of_days
+    num_trades = num_trades.replace([np.inf, -np.inf], np.nan)  # replace any inf values with NaN
+    num_trades = num_trades.fillna(0)  # replace NaN values with 0
+    num_trades = np.ceil(num_trades).astype(int)  # round up to nearest integer
+
 
     # Add a new column to the quarter_data dataframe that calculates the number of trades transacted per day
     quarter_data["num_trades"] = num_trades
 
 
-
     print(quarter_data)
+    #  get advice and suggestion from openai with the help of given dataframe information
     message = getStockAdviceFromOpenAI(quarter_data)
+    # plotting the graph with the help of above collected information and storing information
     imgdata = draw_graph2(symbol,data,no_of_days)
     return data, imgdata, message
 
