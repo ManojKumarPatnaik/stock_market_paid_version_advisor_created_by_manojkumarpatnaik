@@ -30,10 +30,11 @@ def getResponseFromOpenAI(input_prompt):
         json_input = json.load(f)
     raw_data = input_prompt+'''\n
     Please provide the following information using above text 
-    ticker_id: The stock symbol for the security of interest, entered in uppercase (e.g., AAPL for Apple Inc.) from yfinance package API
+    ticker_id: find the ticker_id the stock symbol for the security of interest, entered in uppercase (e.g., AAPL for 
+    Apple Inc.) from yfinance package API check if it listed in NSE then append .NS to ticker_id (e.g., SBIN for SBI output SBIN.NS)
     Start_date: The start date of the data range, in yyyy-mm-DD format
     End_date: The end date of the data range, in yyyy-mm-DD format
-    Moving_average_days: The number of days to use for the moving average calculation, should be an integer format
+    Moving_average_days: The number of days to use for the moving average calculation, should be an integer format only
     before the word 'days'
     Balance_sheet: Indicate 'true' or 'false' if above text asking to extract balance sheet data
     Actions: Indicate 'true' or 'false'  if above text asking to extract actions data
@@ -176,16 +177,17 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     print(data)
 
     quarter_data = data.resample('Q').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
-    print(quarter_data)
 
-    # Get historical data for a stock
-    msft = yf.Ticker("MSFT")
-    hist = msft.history(period="1d")
 
     # Calculate the number of trades transacted per day
-    num_trades = hist["Volume"][0] / hist["Volume"].count()
+    num_trades = data["Volume"] // no_of_days
 
-    print(f"Number of trades transacted per day: {num_trades}")
+    # Add a new column to the quarter_data dataframe that calculates the number of trades transacted per day
+    quarter_data["num_trades"] = num_trades
+
+
+
+    print(quarter_data)
     message = getStockAdviceFromOpenAI(quarter_data)
     imgdata = draw_graph2(symbol,data,no_of_days)
     return data, imgdata, message
