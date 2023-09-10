@@ -150,11 +150,10 @@ function App() {
                       <div className="message">
                         {base64regex.test(message.chart) ? (
                           <div className="response">
-                            <div className="message">{message.message}</div>
-
                             <img
                               src={`data:image/png;base64,${message.chart}`}
                             />
+                            <div className="message">{message.message}</div>
                           </div>
                         ) : (
                           <>
