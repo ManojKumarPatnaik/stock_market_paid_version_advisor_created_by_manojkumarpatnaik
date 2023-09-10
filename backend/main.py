@@ -28,26 +28,63 @@ def getResponseFromOpenAI(input_prompt):
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
-    raw_input_data =  "Can you extract the symbol, start_date, number_of_days, and end_date and store the values in a dictionary? " \
-                     "Symbol should be in uppercase and start_date, end_date should be in yyyy-mm-DD format and number_of_days will present before the days keyword " \
-                     "Please see below text for reference.\n" + input_prompt
-    json_input["messages"][0]["content"] = raw_input_data
+    raw_data = input_prompt+'''\n
+    Please provide the following information using above text 
+    ticker_id: The stock symbol for the security of interest, entered in uppercase (e.g., AAPL for Apple Inc.) from yfinance package API
+    Start_date: The start date of the data range, in yyyy-mm-DD format
+    End_date: The end date of the data range, in yyyy-mm-DD format
+    Moving_average_days: The number of days to use for the moving average calculation, should be an integer format
+    before the word 'days'
+    Balance_sheet: Indicate 'true' or 'false' if above text asking to extract balance sheet data
+    Actions: Indicate 'true' or 'false'  if above text asking to extract actions data
+    Financials: Indicate 'true' or 'false'  if above text asking to extract financial statements data
+    Capital_gains: Indicate 'true' or 'false' if above text asking to extract capital gains data
+    Cash_flow: Indicate 'true' or 'false'  if above text asking to extract cash flow data
+    Income_statement: Indicate 'true' or 'false'  if above text asking to extract income statement data
+    Please_store the requested information in the json format with all keys should be in lowercase'''
+
+    json_input["messages"][0]["content"] = raw_data
 
     try:
         response = requests.post(uri, headers=header, json=json_input)
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
+        # print(message)
         content_Json=json.loads(message["content"])
-        # print(content_Json)
-        symbol = content_Json['symbol']
-        # print(symbol)
+        print(content_Json)
+        ticker=content_Json['ticker_id']
+        # print(ticker)
+        balance_sheet=content_Json['balance_sheet']
+        # print(balance_sheet)
+
         start_date = content_Json['start_date']
         # print(start_date)
         end_date = content_Json['end_date']
-        no_of_days = content_Json['number_of_days']
-        data, chartdata = get_Data_From_YFinance(symbol, start_date, end_date,no_of_days)
+        # print(end_date)
+        no_of_days = content_Json['moving_average_days']
+        # print(no_of_days)
+        if(balance_sheet):
+            print(yf.Ticker(ticker).balance_sheet)
+        Actions = content_Json['actions']
+        if(Actions):
+            print(yf.Ticker(ticker).actions)
+        Financials = content_Json['financials']
+        if (Financials):
+            print(yf.Ticker(ticker).financials)
+        Capital_gains = content_Json['capital_gains']
+        if (Capital_gains):
+            print(yf.Ticker(ticker).capital_gains)
+        Cash_flow = content_Json['capital_gains']
+        if (Cash_flow):
+            print(yf.Ticker(ticker).cashflow)
+        Income_statement = content_Json['income_statement']
+        if (Income_statement):
+            print(yf.Ticker(ticker).incomestmt)
+        print(yf.Ticker(ticker).news)
+        print(yf.Ticker(ticker).history)
+        data, chartdata, advice = get_Data_From_YFinance(ticker, start_date, end_date,no_of_days)
         print('Response text:\n', message["content"])
-        return chartdata
+        return chartdata,advice
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
         print('Error response text:', ex.response.text)
@@ -92,16 +129,18 @@ def getStockAdviceFromOpenAI(dataFrame):
     header = {os.getenv("API_KEY"): os.getenv("KEY_VALUE")}
     with open('resources/input.json', 'r') as f:
         json_input = json.load(f)
-    raw_input_data =  "You're the expert stock advisor and having 30 years of experience in stock selection and Investments " \
+    raw_input_data =  "You're the expert stock advisor and having 30 years of experience in stock selection and Investments plans" \
                       "give below dataframe can you analyze the stock performance over the period and explain how it behave in every quater? " \
                       "and when to buy this stock? how long should I hold means suggestion for long or short" \
-                      " term investment plan?\n" + str(dataFrame)
+                      " term investment plan and don't give any code snippets?\n" + str(dataFrame)
     json_input["messages"][0]["content"] = raw_input_data
     try:
         response = requests.post(uri, headers=header, json=json_input)
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
+
         print('Response text:\n', message["content"])
+        return message['content']
     except requests.exceptions.HTTPError as ex:
         print('Error response status code:', ex.response.status_code)
         print('Error response text:', ex.response.text)
@@ -115,10 +154,10 @@ def compare():
     # extract prompt string from data
     input_prompt = data["messages"][0]["content"]
     # call example method with input prompt
-    imgdata = getResponseFromOpenAI(input_prompt)
+    imgdata , message= getResponseFromOpenAI(input_prompt)
     # return response
 
-    return jsonify({"status": "success", "chart": imgdata})
+    return jsonify({"status": "success", "chart": imgdata, "message":message})
 
 
 def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
@@ -131,14 +170,25 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     columns_of_interest = ['Open', 'Close',  'Volume', 'avg_LTP']
     data = data[columns_of_interest]
 
+
     # Print the data
     print("Printing yfinance data from NSE\n")
     print(data)
-    monthly_data = data.resample('M').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
-    print(monthly_data)
-    getStockAdviceFromOpenAI(monthly_data)
+
+    quarter_data = data.resample('Q').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
+    print(quarter_data)
+
+    # Get historical data for a stock
+    msft = yf.Ticker("MSFT")
+    hist = msft.history(period="1d")
+
+    # Calculate the number of trades transacted per day
+    num_trades = hist["Volume"][0] / hist["Volume"].count()
+
+    print(f"Number of trades transacted per day: {num_trades}")
+    message = getStockAdviceFromOpenAI(quarter_data)
     imgdata = draw_graph2(symbol,data,no_of_days)
-    return data, imgdata
+    return data, imgdata, message
 
 
 
