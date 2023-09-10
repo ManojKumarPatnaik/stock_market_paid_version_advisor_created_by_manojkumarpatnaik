@@ -98,7 +98,7 @@ function App() {
         messages: [
           {
             role: "assistant",
-            content: `Could you please give me the statistic data for ${jsonData?.ticker_id} symbol from start date as ${jsonData?.start_date} to end date as ${jsonData?.end_date} and draw a simple moving average for ${jsonData?.moving_average_days} days and give me balance sheet and income statement?`,
+            content: `Could you please give me the statistic data for ${jsonData?.ticker_id} symbol from start date as ${jsonData?.start_date} to end date as ${jsonData?.end_date} and draw a simple moving average for ${jsonData?.moving_average_days} days?`,
           },
         ],
       };
