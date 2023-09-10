@@ -52,36 +52,83 @@ function App() {
 
     const message = apiMessages[apiMessages.length - 1];
 
-    const apiRequestBody = {
-      model: "gpt-3.5-turbo",
-      messages: [message],
+    const updatedMessage = {
+      role: "assistant",
+      content:
+        message.content +
+        `Please provide the following information using above text 
+        ticker_id: find the ticker_id the stock symbol for the security of interest, entered in uppercase (e.g., AAPL for 
+        Apple Inc.) from yfinance package API check if it listed in NSE then append .NS to ticker_id (e.g., SBIN for SBI output SBIN.NS)
+        Start_date: The start date of the data range, in yyyy-mm-DD format
+        End_date: The end date of the data range, in yyyy-mm-DD format
+        Moving_average_days: The number of days to use for the moving average calculation, should be an integer format only
+        before the word 'days'
+        Balance_sheet: Indicate 'true' or 'false' if above text asking to extract balance sheet data
+        Actions: Indicate 'true' or 'false' if above text asking to extract actions data
+        Financials: Indicate 'true' or 'false' if above text asking to extract financial statements data
+        Capital_gains: Indicate 'true' or 'false' if above text asking to extract capital gains data
+        Cash_flow: Indicate 'true' or 'false' if above text asking to extract cash flow data
+        Income_statement: Indicate 'true' or 'false' if above text asking to extract income statement data
+        Please_store the requested information in the json format with all keys should be in lowercase`,
     };
 
-    axios
-      .post("http://localhost:5000/jarvis/openai", apiRequestBody)
-      .then((data) => {
-        return data.data;
-      })
-      .then((data) => {
-        setMessages([
-          ...chatMessages,
+    const apiRequestBody = {
+      model: "gpt-3.5-turbo",
+      messages: [updatedMessage],
+    };
+
+    const response = await fetch(
+      "https://aoai-engx-hack23.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-07-01-preview",
+      {
+        method: "POST",
+        headers: {
+          "Api-Key": "f855aa32fcf842fe84a540df1e8c7e99",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiRequestBody),
+      }
+    );
+
+    response.json().then((res) => {
+      const jsonData = JSON.parse(res.choices[0].message.content);
+      console.log(jsonData);
+
+      const pythonApiRequestBody = {
+        model: "gpt-3.5-turbo",
+        messages: [
           {
-            message: data.chart,
-            sender: "JarvisStockbot",
+            role: "assistant",
+            content: `Could you please give me the statistic data for ASIANPAINT.NS symbol from start date as ${jsonData?.start_date} to end date as ${jsonData?.end_date} and draw a simple moving average for ${jsonData?.moving_average_days} days?`
           },
-        ]);
-        setIsTyping(false);
-      })
-      .catch((error) => {
-        setMessages([
-          ...chatMessages,
-          {
-            message: "Currently cant serve your request please try later!",
-            sender: "JarvisStockbot",
-          },
-        ]);
-        setIsTyping(false);
-      });
+        ],
+      };
+      axios
+        .post("http://localhost:5000/jarvis/openai", pythonApiRequestBody)
+        .then((data) => {
+          return data.data;
+        })
+        .then((data) => {
+          setMessages([
+            ...chatMessages,
+            {
+              message: data.chart,
+              sender: "JarvisStockbot",
+            },
+          ]);
+          setIsTyping(false);
+        })
+        .catch((error) => {
+          setMessages([
+            ...chatMessages,
+            {
+              message:
+                "Invalid Format, please mention start date end date and symbol",
+              sender: "JarvisStockbot",
+            },
+          ]);
+          setIsTyping(false);
+        });
+    });
   }
 
   return (
