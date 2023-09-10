@@ -56,7 +56,7 @@ function App() {
       role: "assistant",
       content:
         message.content +
-        `Please provide the following information using above text 
+        `Please provide the following information in json format using above text 
         ticker_id: find the ticker_id the stock symbol for the security of interest, entered in uppercase (e.g., AAPL for 
         Apple Inc.) from yfinance package API check if it listed in NSE then append .NS to ticker_id (e.g., SBIN for SBI output SBIN.NS)
         Start_date: The start date of the data range, in yyyy-mm-DD format
@@ -98,7 +98,7 @@ function App() {
         messages: [
           {
             role: "assistant",
-            content: `Could you please give me the statistic data for ASIANPAINT.NS symbol from start date as ${jsonData?.start_date} to end date as ${jsonData?.end_date} and draw a simple moving average for ${jsonData?.moving_average_days} days?`
+            content: `Could you please give me the statistic data for EPAM symbol from start date as ${jsonData?.start_date} to end date as ${jsonData?.end_date} and draw a simple moving average for ${jsonData?.moving_average_days} days and give me balance sheet and income statement?`,
           },
         ],
       };
@@ -111,7 +111,8 @@ function App() {
           setMessages([
             ...chatMessages,
             {
-              message: data.chart,
+              message: data.message,
+              chart: data.chart,
               sender: "JarvisStockbot",
             },
           ]);
@@ -147,13 +148,16 @@ function App() {
                   <>
                     {message.sender === "JarvisStockbot" ? (
                       <div className="message">
-                        {base64regex.test(message.message) ? (
-                          <img
-                            src={`data:image/png;base64,${message.message}`}
-                          />
+                        {base64regex.test(message.chart) ? (
+                          <div className="response">
+                            <div className="message">{message.message}</div>
+
+                            <img
+                              src={`data:image/png;base64,${message.chart}`}
+                            />
+                          </div>
                         ) : (
                           <>
-                            <img src="src\assets\bot.png"></img>
                             <div className="message">{message.message}</div>
                           </>
                         )}
