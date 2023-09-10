@@ -183,14 +183,14 @@ def get_Data_From_YFinance(symbol, start_date, end_date,no_of_days):
     quarter_data = data.resample('Q').agg({'Volume': 'mean', 'avg_LTP': 'mean'})
 
     # Calculate the number of trades transacted per day
-    num_trades = data["Volume"].fillna(0) // no_of_days
-    num_trades = num_trades.replace([np.inf, -np.inf], np.nan)  # replace any inf values with NaN
-    num_trades = num_trades.fillna(0)  # replace NaN values with 0
-    num_trades = np.ceil(num_trades).astype(int)  # round up to nearest integer
+    # num_trades = data["Volume"].fillna(0) // no_of_days
+    # num_trades = num_trades.replace([np.inf, -np.inf], np.nan)  # replace any inf values with NaN
+    # num_trades = num_trades.fillna(0)  # replace NaN values with 0
+    # num_trades = np.ceil(num_trades).astype(int)  # round up to nearest integer
 
 
     # Add a new column to the quarter_data dataframe that calculates the number of trades transacted per day
-    quarter_data["num_trades"] = num_trades
+    # quarter_data["num_trades"] = num_trades
 
 
     print(quarter_data)
